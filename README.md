@@ -16,5 +16,5 @@ GitHub. It is recommended that you download this page to your computer and use
 it offline. If you're a programmer, you can inspect the source code itself for
 the absence of backdoors.
 
-Note: Currently this app is only known to work in recent versions of Chrome and
-Firefox.
+Note: Currently this app only works on the latest desktop versions of Firefox,
+Google Chrome, and Microsoft Edge.

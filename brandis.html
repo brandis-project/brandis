@@ -37,7 +37,7 @@ function handleError(e) {
 
 function unsupported() {
     alert("It appears that your browser does not properly support the Web Crypto APIs. " +
-        "Please try this app in the latest version of Chrome or Firefox.");
+        "Please try this app in the latest version of Chrome, Firefox, or Edge.");
 }
 
 function checkCryptoSupport() {
@@ -90,7 +90,8 @@ function encryptMesage() {
     crypto.subtle.importKey("jwk", publicKey,
         { name: "RSA-OAEP", hash: { name: "SHA-256" }, }, false, ["encrypt"])
     .then(function(publicKey) {
-        crypto.subtle.encrypt({ name: "RSA-OAEP", }, publicKey, stringToArrayBuffer(inputElement.value))
+        crypto.subtle.encrypt({ name: "RSA-OAEP", hash: { name: "SHA-256" } },
+            publicKey, stringToArrayBuffer(inputElement.value))
         .then(function(encrypted) {
             outputElement.value = toBase64(encrypted);
         }).catch(handleError);
@@ -104,7 +105,8 @@ function decryptMesage() {
     crypto.subtle.importKey("jwk", JSON.parse(privateKeyElement.value),
         { name: "RSA-OAEP", hash: {name: "SHA-256"}, }, false, ["decrypt"])
     .then(function(privateKey) {
-        crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, fromBase64(inputElement.value))
+        crypto.subtle.decrypt({ name: "RSA-OAEP", hash: { name: "SHA-256" } },
+            privateKey, fromBase64(inputElement.value))
         .then(function(plaintext) {
             var dec16 = new Uint16Array(plaintext);
             var decstr = "";
@@ -299,7 +301,8 @@ body {
                     and use it offline. If you're a programmer, you can inspect the source code itself
                     for the absence of backdoors.
                 </p>
-                <p>Note: Currently this app is only known to work in recent versions of Chrome and Firefox.</p>
+                <p>Note: Currently this app only works on the latest desktop versions of Firefox,
+                    Google Chrome, and Microsoft Edge.</p>
             </div>
             <div class="screen-inactive" id="screen-encrypt">
                 <div class="row">
@@ -347,8 +350,10 @@ body {
                         <div class="row-header">
                             Encrypted message
                         </div>
-                        <div class="action-button" onclick="decryptMesage()">
-                            Decrypt
+                        <div class="center">
+                            <div class="action-button" onclick="decryptMesage()">
+                                Decrypt
+                            </div>
                         </div>
                     </div>
                     <div class="col">
