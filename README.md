@@ -1,5 +1,7 @@
 # Brandis: End-to-end encryption for everyone
 
+Try online: https://brandis.io
+
 This app is intended to illustrate the ease with which secure, end-to-end
 encryption can be provided using a small amount of JavaScript code in modern
 web browsers. Brandis does not implement encryption itself; rather, it relies
