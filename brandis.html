@@ -102,7 +102,14 @@ function decryptMesage() {
     var privateKeyElement = document.getElementById("decrypt-private-key");
     var inputElement = document.getElementById("decrypt-input");
     var outputElement = document.getElementById("decrypt-output");
-    crypto.subtle.importKey("jwk", JSON.parse(privateKeyElement.value),
+    var privateKey;
+    try {
+        privateKey = JSON.parse(privateKeyElement.value);
+    } catch (e) {
+        handleError("Invalid private key");
+        return;
+    }
+    crypto.subtle.importKey("jwk", privateKey,
         { name: "RSA-OAEP", hash: {name: "SHA-256"}, }, false, ["decrypt"])
     .then(function(privateKey) {
         crypto.subtle.decrypt({ name: "RSA-OAEP", hash: { name: "SHA-256" } },
@@ -125,7 +132,6 @@ var allScreens = [
 ];
 
 function showScreen(active) {
-    console.log("showScreen " + active);
     for (var name of allScreens) {
         var element = document.getElementById(name);
         if (element) {
