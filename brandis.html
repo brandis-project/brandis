@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
+<title>Brandis: End-to-end encryption for everyone</title>
 <script>
 
 function fromBase64(str) {
@@ -32,6 +33,22 @@ function stringToArrayBuffer(str) {
 function handleError(e) {
     console.error(e);
     alert("" + e);
+}
+
+function unsupported() {
+    alert("It appears that your browser does not properly support the Web Crypto APIs. " +
+        "Please try this app in the latest version of Chrome or Firefox.");
+}
+
+function checkCryptoSupport() {
+    if (!crypto ||
+        !crypto.subtle ||
+        !crypto.subtle.generateKey ||
+        !crypto.subtle.importKey) {
+        unsupported();
+        return false;
+    }
+    return true;
 }
 
 var alreadyGenerated = false;
@@ -120,6 +137,7 @@ function showScreen(active) {
             }
         }
     }
+    return true;
 }
 
 </script>
@@ -252,13 +270,13 @@ body {
                 <div class="main-button" onclick="showScreen('screen-about')">
                     About
                 </div>
-                <div class="main-button" onclick="showScreen('screen-generate'); generateKeypair()">
+                <div class="main-button" onclick="checkCryptoSupport() && showScreen('screen-generate'); generateKeypair()">
                     Generate keys
                 </div>
-                <div class="main-button" onclick="showScreen('screen-encrypt')">
+                <div class="main-button" onclick="checkCryptoSupport() && showScreen('screen-encrypt')">
                     Encrypt message
                 </div>
-                <div class="main-button" onclick="showScreen('screen-decrypt')">
+                <div class="main-button" onclick="checkCryptoSupport() && showScreen('screen-decrypt')">
                     Decrypt message
                 </div>
             </div>
