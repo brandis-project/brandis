@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<script>
+
+function fromBase64(str) {
+    var bin = atob(str);
+    var buf = new ArrayBuffer(bin.length);
+    var bytes = new Uint8Array(buf);
+    for (var i = 0; i < bin.length; i++)
+        bytes[i] = bin.charCodeAt(i);
+    return buf;
+}
+
+function toBase64(buf) {
+    var chars = [];
+    var bytes = new Uint8Array(buf);
+    for (var i = 0; i < bytes.length; i++)
+        chars[i] = String.fromCharCode(bytes[i]);
+    return btoa(chars.join(""));
+}
+
+function stringToArrayBuffer(str) {
+    var buf = new ArrayBuffer(str.length * 2);
+    var view = new Uint16Array(buf);
+    for (var i = 0; i < str.length; i++)
+        view[i] = str.charCodeAt(i);
+    return buf;
+}
+
+function handleError(e) {
+    console.error(e);
+    alert("" + e);
+}
+
+var alreadyGenerated = false;
+function generateKeypair() {
+    if (alreadyGenerated)
+        return;
+    alreadyGenerated = true;
+    var keyParams = {
+        name: "RSA-OAEP",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+        hash: { name: "SHA-256" },
+    };
+
+    crypto.subtle.generateKey(keyParams, true, ["encrypt", "decrypt"])
+    .then(function(key) {
+        crypto.subtle.exportKey("jwk", key.publicKey)
+        .then(function(publicKey) {
+            document.getElementById("public-key").value = JSON.stringify(publicKey, null, "    ");
+            crypto.subtle.exportKey("jwk", key.privateKey)
+            .then(function(privateKey) {
+                document.getElementById("private-key").value = JSON.stringify(privateKey, null, "    ");
+            }).catch(handleError);
+        }).catch(handleError);
+    }).catch(handleError);
+}
+
+function encryptMesage() {
+    var publicKeyElement = document.getElementById("encrypt-public-key");
+    var inputElement = document.getElementById("encrypt-input");
+    var outputElement = document.getElementById("encrypt-output");
+    var publicKey;
+    try {
+        publicKey = JSON.parse(publicKeyElement.value);
+    } catch (e) {
+        handleError("Invalid public key");
+        return;
+    }
+    crypto.subtle.importKey("jwk", publicKey,
+        { name: "RSA-OAEP", hash: { name: "SHA-256" }, }, false, ["encrypt"])
+    .then(function(publicKey) {
+        crypto.subtle.encrypt({ name: "RSA-OAEP", }, publicKey, stringToArrayBuffer(inputElement.value))
+        .then(function(encrypted) {
+            outputElement.value = toBase64(encrypted);
+        }).catch(handleError);
+    }).catch(handleError);
+}
+
+function decryptMesage() {
+    var privateKeyElement = document.getElementById("decrypt-private-key");
+    var inputElement = document.getElementById("decrypt-input");
+    var outputElement = document.getElementById("decrypt-output");
+    crypto.subtle.importKey("jwk", JSON.parse(privateKeyElement.value),
+        { name: "RSA-OAEP", hash: {name: "SHA-256"}, }, false, ["decrypt"])
+    .then(function(privateKey) {
+        crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, fromBase64(inputElement.value))
+        .then(function(plaintext) {
+            var dec16 = new Uint16Array(plaintext);
+            var decstr = "";
+            for (var i = 0; i < dec16.length; i++)
+                decstr += String.fromCharCode(dec16[i]);
+            outputElement.value = decstr;
+        }).catch(handleError);
+    }).catch(handleError);
+}
+
+var allScreens = [
+    "screen-about",
+    "screen-generate",
+    "screen-encrypt",
+    "screen-decrypt",
+];
+
+function showScreen(active) {
+    console.log("showScreen " + active);
+    for (var name of allScreens) {
+        var element = document.getElementById(name);
+        if (element) {
+            if (active === name) {
+                element.classList.remove("screen-inactive");
+                element.classList.add("screen-active");
+            }
+            else {
+                element.classList.remove("screen-active");
+                element.classList.add("screen-inactive");
+            }
+        }
+    }
+}
+
+</script>
+<style>
+body {
+    font-family: "Avenir", sans-serif;
+    padding: 0;
+    margin: 0;
+    background-color: #447389;
+    color: white;
+}
+
+.header {
+    background-color: #48a9a6;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding-left: 10px;
+    padding-right: 10px;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+.content {
+    overflow-y: scroll;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+.footer {
+    background-color: #447389;
+    padding: 10px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+}
+.header > div {
+    border: 1px solid back;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.main-button-set {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.main-button {
+    background-color: #e4dfda;
+    color: black;
+    font-weight: bold;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+.center {
+    display: flex;
+    justify-content: space-between;
+}
+.action-button {
+    background-color: #e4dfda;
+    color: black;
+    font-weight: bold;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    width: auto;
+    position: relative;
+}
+.row {
+    display: flex;
+    justify-content: space-between;
+    /*margin-top: 10px;*/
+}
+.row-header {
+    background-color: #48a9a6;
+    color: white;
+    font-weight: bold;
+    padding: 10px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+.col {
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: 50%;
+    padding: 10px;
+    text-align: justify;
+    hyphens: auto;
+}
+.col textarea {
+    width: 100%;
+    height: 400px;
+    font-family: monospace;
+}
+.screen-inactive {
+    display: none;
+}
+.screen-active {
+    display: block;
+}
+.about {
+    margin-left: 20%;
+    margin-right: 20%;
+    text-align: justify;
+    hyphens: auto;
+}
+</style>
+</head>
+<body>
+    <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; width: 100%; position: absolute">
+        <div class="header">
+            <div>
+                <div>
+                    <div style="display: inline-block; padding: 4px">
+                        <img height="16" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFoAAAAgCAYAAACSEW+lAAAEeklEQVRo3u2aV2hUQRSGjT2xxhp7iYoVRRNfbCgWxPYgZsWCKMSOFaOxYwGxF1CxN+waxIoFFBUrKGpiC3aDXWNii5r1H/gD4zB7d/fuLYJ74HtIds7Mf+dOPefmyxe2sIUN5vV6S4HaoCXoCvqBUSBJ4jRYJv09HAwEPUBr0ACUBwVt1FkIVGBbos2e1DBC0rUaHFe0j+AziWeLBzVBSTs7tAioC3qB6WAnuAKeg2xvaPYDvAG3QAqYDbqBqiDChNb8oAY7cw44BG6Dt2zLrOWCLPAMXAI7wFQOmDqgsNnOjQWDwGZwB3z1OmsfwWWwC6wFC8F8HyxkmT3gOsh0WOsXvsz1oD+oFUgH1+EUyvKGzaxlciZVNuroR34q+cUyZznaVoG5YArXZxkxI/qSAZrfx3OpWAkOglROUavsN0faPrCCbY3T6Bgg6Ryk+X0Kn1E8625wDjxh/UZ20aijfdk3sBg0B8Vt3Avag/MWdPIZ0Mr02ulfawlukMtBjg8N6UYV5PrYsDwOnmaKgQMhdLLYqIo6qHcI+KnRMcnIaZ3GIcWFo2Ml8M5EJ2eAsi7oPanRMtHIYaLGYZpL53QzS8hJl7Qu0GhJNHLor3EY6pL4Iz46M8vg/L7fJa2TNVp6+1vkd/8jHX1B15E844sL1FHN76f+kY7eIvYaf05tFKdkF4QX0xw1H4NoqUxF8FIpk2rXScOP3rnKLbJ5IE71wHfJcakLwhtqrszJmnLzlDLZAd3MrNe7XtLwGVQPNFj0ws11j0cm9bZVQ1OuviY80McFvcel9h+CyECcIsStRnK8AQo4LDxF6by9BmWPKWW3OaxVXLTumzr5oPAmyfGT4b3deuFVGVSSrbtB+b5K2dci9Oqg3lhlVi0PxnmMIr6rg8KTlLbFaIkyKF+a4UvZRjqoN0Fpe0gwzm2V6/gSh0SX5ulCtlkB+C1SfO76PV7ZsxGKoFuLYJzLMSCfZw+MRpWFomdrLie1A/BrzMCXbBMcyjLJs+mpuIsEW8kJRbjHZtEtNXHwHSFsoB/EC3D4dLTfTCVjlUrSQBmbBNdVdm4vw4/xQdTRXhMjvgmq2aRZXJjSlfYGm6moFg/ffwWzQUerwpBMzCZyyqm2M8i6RL7wsKaeh0zGlrFIcxToAq4q7Yi8ZIzZStf4CN6Iq+5Gsbuz4xuBKlyzIpl5zkMIi2bStBkTp8mc6hk+6n8vRrkJvU00gyPPnjPbksQEcFMx2rkBRymaI/n/Klz/O4PRYCu456P+BaG8vQrMePuzHJ59X3DjTJNIZ4d+5q7sz8SmlhCC5oFKCMEoLZfJeEm6ovkB///JIIMi21k5DmNWeDQzza9sTmqKl7RdfHthwfRux5xmhs2aX/KzhhJWLv4x/KBkA7jGG1iOCXG5HP2pTMqK7yM62LHRcg/oBGYyM53Gts0kgXM42C5zSfWIGW/3+TGCZ+3GXKM90pc/uxSBz5hJTuT6HMe1z41wZmFe8eOoZRiYodwZvAxB5H2t5OFAaOhGmixsYQvbf21/AEhvhuWydx+AAAAAAElFTkSuQmCC">
+                    </div>
+                    <span style="font-size: 24px; font-weight: bold">Brandis</span>
+                </div>
+                <div>
+                    End-to-end encryption for everyone
+                </div>
+            </div>
+            <div class="main-button-set">
+                <div class="main-button" onclick="showScreen('screen-about')">
+                    About
+                </div>
+                <div class="main-button" onclick="showScreen('screen-generate'); generateKeypair()">
+                    Generate keys
+                </div>
+                <div class="main-button" onclick="showScreen('screen-encrypt')">
+                    Encrypt message
+                </div>
+                <div class="main-button" onclick="showScreen('screen-decrypt')">
+                    Decrypt message
+                </div>
+            </div>
+        </div>
+        <div class="content">
+
+            <div class="screen-active about" id="screen-about">
+                <h1>Welcome to Brandis</h1>
+                <p>This app is intended to illustrate the ease with which secure, end-to-end encryption
+                    can be provided using a small amount of JavaScript code in modern web browsers.
+                    Brandis does not implement encryption itself; rather, it relies on the Web Crypto APIs
+                    that are provided by your browser, and simply exposes a user interface to these APIs
+                    that enable their use by non-programmers.
+                </p>
+                <p>To get started, generate a public/private keypair using the button at the top, and
+                    follow the instructions from there.</p>
+                <p>The source code for this app is in the public domain, and can be accessed on
+                    <a href="https://github.com/brandis-project/brandis" style="color: white">GitHub</a>.
+                    It is recommended that you download this page to your computer
+                    and use it offline. If you're a programmer, you can inspect the source code itself
+                    for the absence of backdoors.
+                </p>
+                <p>Note: Currently this app is only known to work in recent versions of Chrome and Firefox.</p>
+            </div>
+            <div class="screen-inactive" id="screen-encrypt">
+                <div class="row">
+                    <div class="col">
+                        <div class="row-header">
+                            Recipient's public key
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="row-header">
+                            Plaintext message
+                        </div>
+                        <div class="center">
+                            <div class="action-button" onclick="encryptMesage()">
+                                Encrypt
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="row-header">
+                            Encrypted message
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <textarea id="encrypt-public-key" autocompvare="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+                    </div>
+                    <div class="col">
+                        <textarea id="encrypt-input" autocompvare="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+                    </div>
+                    <div class="col">
+                        <textarea id="encrypt-output" autocompvare="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="screen-inactive" id="screen-decrypt">
+                <div class="row">
+                    <div class="col">
+                        <div class="row-header">
+                            Your private key
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="row-header">
+                            Encrypted message
+                        </div>
+                        <div class="action-button" onclick="decryptMesage()">
+                            Decrypt
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="row-header">
+                            Plaintext message
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <textarea id="decrypt-private-key" autocompvare="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+                    </div>
+                    <div class="col">
+                        <textarea id="decrypt-input" autocompvare="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+                    </div>
+                    <div class="col">
+                        <textarea id="decrypt-output" autocompvare="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="screen-inactive" id="screen-generate">
+                <div class="row">
+                    <div class="col">
+                        <div class="row-header">
+                            Public key
+                        </div>
+                        <div>
+                            This is your <b>public key</b>. Copy &amp; paste it to a text file on your computer.
+                            Share this file with anyone with whom you want to communicate securely. They can use
+                            it to encrypt messages that only you can read.
+                        </div>
+
+                        <div style="margin-top: 12px">
+                            For optimal security, do so in person, rather than online. This way, the other
+                            person can be certain that it's yours, not someone pretending to be you.
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="row-header">
+                            Private key
+                        </div>
+                        <div>
+                            This is your <b>private key</b>. Copy &amp; paste it to a text file on your computer.
+                            <b>Do not share it with anyone else</b>, as it can be used to decrypt any messages sent
+                            to you.
+                        </div>
+                        <div style="margin-top: 12px">
+                            For more security, store it offline on a USB drive instead of your computer, or
+                            generate a new one on a separate computer that is not connected to the Internet and use
+                            that instead.
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <textarea id="public-key" autocompvare="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+                    </div>
+                    <div class="col">
+                        <textarea id="private-key" autocompvare="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            <div><b>Powered by:</b> The laws of mathematics&trade;</div>
+            <div><a href="https://github.com/brandis-project/brandis" style="color: white">GitHub</a></div>
+        </div>
+    </div>
+</body>
+</html>
