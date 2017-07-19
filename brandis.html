@@ -194,7 +194,7 @@ a {
     justify-content: center;
     flex-wrap: wrap;
 }
-.main-button {
+button {
     background-color: #e4dfda;
     color: black;
     font-weight: bold;
@@ -204,19 +204,15 @@ a {
     margin-bottom: 10px;
     margin-left: 10px;
     margin-right: 10px;
+    border: none;
+    font-size: inherit;
+    font-family: inherit;
 }
 .center {
     display: flex;
     justify-content: space-between;
 }
 .action-button {
-    background-color: #e4dfda;
-    color: black;
-    font-weight: bold;
-    border-radius: 5px;
-    padding: 10px;
-    margin-top: 10px;
-    margin-bottom: 10px;
     margin-left: auto;
     margin-right: auto;
     width: auto;
@@ -277,18 +273,18 @@ a {
                 </div>
             </div>
             <div class="main-button-set">
-                <div class="main-button" onclick="showScreen('screen-about')">
+                <button onclick="showScreen('screen-about')">
                     About
-                </div>
-                <div class="main-button" onclick="checkCryptoSupport() && showScreen('screen-generate'); generateKeypair()">
+                </button>
+                <button onclick="checkCryptoSupport() && showScreen('screen-generate'); generateKeypair()">
                     Generate keys
-                </div>
-                <div class="main-button" onclick="checkCryptoSupport() && showScreen('screen-encrypt')">
+                </button>
+                <button onclick="checkCryptoSupport() && showScreen('screen-encrypt')">
                     Encrypt message
-                </div>
-                <div class="main-button" onclick="checkCryptoSupport() && showScreen('screen-decrypt')">
+                </button>
+                <button onclick="checkCryptoSupport() && showScreen('screen-decrypt')">
                     Decrypt message
-                </div>
+                </button>
             </div>
         </div>
         <div class="content">
@@ -335,9 +331,9 @@ a {
                             Plaintext message
                         </div>
                         <div class="center">
-                            <div class="action-button" onclick="encryptMesage()">
+                            <button class="action-button" onclick="encryptMesage()">
                                 Encrypt
-                            </div>
+                            </button>
                         </div>
                         <div style="text-align: center">Max: 190 characters</div>
                     </div>
@@ -371,9 +367,9 @@ a {
                             Encrypted message
                         </div>
                         <div class="center">
-                            <div class="action-button" onclick="decryptMesage()">
+                            <button class="action-button" onclick="decryptMesage()">
                                 Decrypt
-                            </div>
+                            </button>
                         </div>
                     </div>
                     <div class="col">
