@@ -61,7 +61,7 @@ function handleError(e) {
 
 function unsupported() {
     alert("It appears that your browser does not properly support the Web Crypto APIs. " +
-        "Please try this app in the latest version of Chrome, Firefox, or Edge.");
+        "Please try this app in the latest version of Chrome or Firefox.");
 }
 
 function checkCryptoSupport() {
@@ -186,6 +186,7 @@ function showScreen(active) {
     return true;
 }
 
+window.browserSupported = true;
 </script>
 <style>
 body {
@@ -294,6 +295,18 @@ button {
     text-align: justify;
     hyphens: auto;
 }
+#unsupported-browser {
+    background-color: red;
+    color: white;
+    font-weight: bold;
+    margin-left: 20%;
+    margin-right: 20%;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 4px;
+    border: 4px solid black;
+    text-align: center;
+}
 </style>
 </head>
 <body>
@@ -326,6 +339,11 @@ button {
             </div>
         </div>
         <div class="content">
+
+            <div id="unsupported-browser" style="display: none">
+                You appear using an supported browser. Try opening this page in the latest desktop
+                version of Chrome or Firefox.
+            </div>
 
             <div class="screen-active about" id="screen-about">
                 <h1>Welcome to Brandis</h1>
@@ -475,5 +493,10 @@ button {
             <div><a href="https://github.com/brandis-project/brandis">GitHub</a></div>
         </div>
     </div>
+    <script>
+    if (!window.browserSupported) {
+        document.getElementById("unsupported-browser").style.display = "block";
+    }
+    </script>
 </body>
 </html>

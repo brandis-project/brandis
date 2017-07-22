@@ -18,7 +18,7 @@ download this page to your computer and use it offline. If you're a programmer,
 you can inspect the source code to check for backdoors.
 
 **Note**: Currently the app only works on the latest desktop versions of
-Firefox, Google Chrome, and Microsoft Edge.
+Firefox, Google Chrome.
 
 Brandis is primarily intended as a demonstration; it was put together in less
 than a day.  For real-world usage, we recommend more established software such
