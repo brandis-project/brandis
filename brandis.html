@@ -23,12 +23,20 @@ function toBase64(buf) {
     return btoa(chars.join(""));
 }
 
-function stringToArrayBuffer(str) {
-    const buf = new ArrayBuffer(str.length);
-    const view = new Uint8Array(buf);
+function stringToArrayBufferUTF16(str) {
+    const buf = new ArrayBuffer(str.length * 2);
+    const view = new Uint16Array(buf);
     for (let i = 0; i < str.length; i++)
-        view[i] = str.charCodeAt(i) & 0xff;
+        view[i] = str.charCodeAt(i);
     return buf;
+}
+
+function arrayBufferToStringUTF16(plaintext) {
+    const dec16 = new Uint16Array(plaintext);
+    let decstr = "";
+    for (let i = 0; i < dec16.length; i++)
+        decstr += String.fromCharCode(dec16[i]);
+    return decstr;
 }
 
 function joinBuffers(buffers) {
@@ -106,7 +114,7 @@ async function encryptMesage() {
     }
 
     try {
-        const plaintextBuffer = stringToArrayBuffer(inputElement.value);
+        const plaintextBuffer = stringToArrayBufferUTF16(inputElement.value);
         const publicKey = await crypto.subtle.importKey("jwk", rawPublicKey,
             rsaOptions, false, ["encrypt"]);
         const encryptedChunks = [];
@@ -148,11 +156,7 @@ async function decryptMesage() {
         }
 
         const plaintext = joinBuffers(plaintextChunks);
-        const dec8 = new Uint8Array(plaintext);
-        let decstr = "";
-        for (let i = 0; i < dec8.length; i++)
-            decstr += String.fromCharCode(dec8[i]);
-        outputElement.value = decstr;
+        outputElement.value = arrayBufferToStringUTF16(plaintext);
     } catch (e) {
         handleError(e);
     }
