@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>Brandis: End-to-end encryption for everyone</title>
 <script>
+"use strict";
 
 function fromBase64(str) {
     var bin = atob(str);
@@ -52,7 +53,7 @@ function checkCryptoSupport() {
 }
 
 var alreadyGenerated = false;
-function generateKeypair() {
+async function generateKeypair() {
     if (alreadyGenerated)
         return;
     alreadyGenerated = true;
@@ -63,65 +64,65 @@ function generateKeypair() {
         hash: { name: "SHA-256" },
     };
 
-    crypto.subtle.generateKey(keyParams, true, ["encrypt", "decrypt"])
-    .then(function(key) {
-        crypto.subtle.exportKey("jwk", key.publicKey)
-        .then(function(publicKey) {
-            document.getElementById("public-key").value = JSON.stringify(publicKey, null, "    ");
-            crypto.subtle.exportKey("jwk", key.privateKey)
-            .then(function(privateKey) {
-                document.getElementById("private-key").value = JSON.stringify(privateKey, null, "    ");
-            }).catch(handleError);
-        }).catch(handleError);
-    }).catch(handleError);
+    try {
+        var key = await crypto.subtle.generateKey(keyParams, true, ["encrypt", "decrypt"]);
+        var publicKey = await crypto.subtle.exportKey("jwk", key.publicKey);
+        var privateKey = await crypto.subtle.exportKey("jwk", key.privateKey);
+        document.getElementById("public-key").value = JSON.stringify(publicKey, null, "    ");
+        document.getElementById("private-key").value = JSON.stringify(privateKey, null, "    ");
+    } catch (e) {
+        handleError(e);
+    }
 }
 
-function encryptMesage() {
+async function encryptMesage() {
     var publicKeyElement = document.getElementById("encrypt-public-key");
     var inputElement = document.getElementById("encrypt-input");
     var outputElement = document.getElementById("encrypt-output");
-    var publicKey;
+    var rawPublicKey;
     try {
-        publicKey = JSON.parse(publicKeyElement.value);
+        rawPublicKey = JSON.parse(publicKeyElement.value);
     } catch (e) {
         handleError("Invalid public key");
         return;
     }
-    crypto.subtle.importKey("jwk", publicKey,
-        { name: "RSA-OAEP", hash: { name: "SHA-256" }, }, false, ["encrypt"])
-    .then(function(publicKey) {
-        crypto.subtle.encrypt({ name: "RSA-OAEP", hash: { name: "SHA-256" } },
-            publicKey, stringToArrayBuffer(inputElement.value))
-        .then(function(encrypted) {
-            outputElement.value = toBase64(encrypted);
-        }).catch(handleError);
-    }).catch(handleError);
+
+    try {
+        var publicKey = await crypto.subtle.importKey("jwk", rawPublicKey,
+            { name: "RSA-OAEP", hash: { name: "SHA-256" }, }, false, ["encrypt"]);
+        var encrypted = await crypto.subtle.encrypt({ name: "RSA-OAEP", hash: { name: "SHA-256" }, },
+            publicKey, stringToArrayBuffer(inputElement.value));
+        outputElement.value = toBase64(encrypted);
+    } catch (e) {
+        handleError(e);
+    }
 }
 
-function decryptMesage() {
+async function decryptMesage() {
     var privateKeyElement = document.getElementById("decrypt-private-key");
     var inputElement = document.getElementById("decrypt-input");
     var outputElement = document.getElementById("decrypt-output");
-    var privateKey;
+    var rawPrivateKey;
     try {
-        privateKey = JSON.parse(privateKeyElement.value);
+        rawPrivateKey = JSON.parse(privateKeyElement.value);
     } catch (e) {
         handleError("Invalid private key");
         return;
     }
-    crypto.subtle.importKey("jwk", privateKey,
-        { name: "RSA-OAEP", hash: {name: "SHA-256"}, }, false, ["decrypt"])
-    .then(function(privateKey) {
-        crypto.subtle.decrypt({ name: "RSA-OAEP", hash: { name: "SHA-256" } },
-            privateKey, fromBase64(inputElement.value))
-        .then(function(plaintext) {
-            var dec8 = new Uint8Array(plaintext);
-            var decstr = "";
-            for (var i = 0; i < dec8.length; i++)
-                decstr += String.fromCharCode(dec8[i]);
-            outputElement.value = decstr;
-        }).catch(handleError);
-    }).catch(handleError);
+
+    try {
+        var privateKey = await crypto.subtle.importKey("jwk", rawPrivateKey,
+            { name: "RSA-OAEP", hash: { name: "SHA-256" }, }, false, ["decrypt"]);
+        var plaintext = await crypto.subtle.decrypt({ name: "RSA-OAEP", hash: { name: "SHA-256" }, },
+            privateKey, fromBase64(inputElement.value));
+        var dec8 = new Uint8Array(plaintext);
+        var decstr = "";
+        for (var i = 0; i < dec8.length; i++)
+            decstr += String.fromCharCode(dec8[i]);
+        outputElement.value = decstr;
+    } catch (e) {
+        handleError(e);
+    }
 }
 
 var allScreens = [
