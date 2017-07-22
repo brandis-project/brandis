@@ -7,26 +7,26 @@
 "use strict";
 
 function fromBase64(str) {
-    var bin = atob(str);
-    var buf = new ArrayBuffer(bin.length);
-    var bytes = new Uint8Array(buf);
-    for (var i = 0; i < bin.length; i++)
+    const bin = atob(str);
+    const buf = new ArrayBuffer(bin.length);
+    const bytes = new Uint8Array(buf);
+    for (let i = 0; i < bin.length; i++)
         bytes[i] = bin.charCodeAt(i);
     return buf;
 }
 
 function toBase64(buf) {
-    var chars = [];
-    var bytes = new Uint8Array(buf);
-    for (var i = 0; i < bytes.length; i++)
+    const chars = [];
+    const bytes = new Uint8Array(buf);
+    for (let i = 0; i < bytes.length; i++)
         chars[i] = String.fromCharCode(bytes[i]);
     return btoa(chars.join(""));
 }
 
 function stringToArrayBuffer(str) {
-    var buf = new ArrayBuffer(str.length);
-    var view = new Uint8Array(buf);
-    for (var i = 0; i < str.length; i++)
+    const buf = new ArrayBuffer(str.length);
+    const view = new Uint8Array(buf);
+    for (let i = 0; i < str.length; i++)
         view[i] = str.charCodeAt(i) & 0xff;
     return buf;
 }
@@ -52,12 +52,12 @@ function checkCryptoSupport() {
     return true;
 }
 
-var alreadyGenerated = false;
+let alreadyGenerated = false;
 async function generateKeypair() {
     if (alreadyGenerated)
         return;
     alreadyGenerated = true;
-    var keyParams = {
+    const keyParams = {
         name: "RSA-OAEP",
         modulusLength: 2048,
         publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
@@ -65,9 +65,9 @@ async function generateKeypair() {
     };
 
     try {
-        var key = await crypto.subtle.generateKey(keyParams, true, ["encrypt", "decrypt"]);
-        var publicKey = await crypto.subtle.exportKey("jwk", key.publicKey);
-        var privateKey = await crypto.subtle.exportKey("jwk", key.privateKey);
+        const key = await crypto.subtle.generateKey(keyParams, true, ["encrypt", "decrypt"]);
+        const publicKey = await crypto.subtle.exportKey("jwk", key.publicKey);
+        const privateKey = await crypto.subtle.exportKey("jwk", key.privateKey);
         document.getElementById("public-key").value = JSON.stringify(publicKey, null, "    ");
         document.getElementById("private-key").value = JSON.stringify(privateKey, null, "    ");
     } catch (e) {
@@ -76,10 +76,10 @@ async function generateKeypair() {
 }
 
 async function encryptMesage() {
-    var publicKeyElement = document.getElementById("encrypt-public-key");
-    var inputElement = document.getElementById("encrypt-input");
-    var outputElement = document.getElementById("encrypt-output");
-    var rawPublicKey;
+    const publicKeyElement = document.getElementById("encrypt-public-key");
+    const inputElement = document.getElementById("encrypt-input");
+    const outputElement = document.getElementById("encrypt-output");
+    let rawPublicKey;
     try {
         rawPublicKey = JSON.parse(publicKeyElement.value);
     } catch (e) {
@@ -88,9 +88,9 @@ async function encryptMesage() {
     }
 
     try {
-        var publicKey = await crypto.subtle.importKey("jwk", rawPublicKey,
+        const publicKey = await crypto.subtle.importKey("jwk", rawPublicKey,
             { name: "RSA-OAEP", hash: { name: "SHA-256" }, }, false, ["encrypt"]);
-        var encrypted = await crypto.subtle.encrypt({ name: "RSA-OAEP", hash: { name: "SHA-256" }, },
+        const encrypted = await crypto.subtle.encrypt({ name: "RSA-OAEP", hash: { name: "SHA-256" }, },
             publicKey, stringToArrayBuffer(inputElement.value));
         outputElement.value = toBase64(encrypted);
     } catch (e) {
@@ -99,10 +99,10 @@ async function encryptMesage() {
 }
 
 async function decryptMesage() {
-    var privateKeyElement = document.getElementById("decrypt-private-key");
-    var inputElement = document.getElementById("decrypt-input");
-    var outputElement = document.getElementById("decrypt-output");
-    var rawPrivateKey;
+    const privateKeyElement = document.getElementById("decrypt-private-key");
+    const inputElement = document.getElementById("decrypt-input");
+    const outputElement = document.getElementById("decrypt-output");
+    let rawPrivateKey;
     try {
         rawPrivateKey = JSON.parse(privateKeyElement.value);
     } catch (e) {
@@ -111,13 +111,13 @@ async function decryptMesage() {
     }
 
     try {
-        var privateKey = await crypto.subtle.importKey("jwk", rawPrivateKey,
+        const privateKey = await crypto.subtle.importKey("jwk", rawPrivateKey,
             { name: "RSA-OAEP", hash: { name: "SHA-256" }, }, false, ["decrypt"]);
-        var plaintext = await crypto.subtle.decrypt({ name: "RSA-OAEP", hash: { name: "SHA-256" }, },
+        const plaintext = await crypto.subtle.decrypt({ name: "RSA-OAEP", hash: { name: "SHA-256" }, },
             privateKey, fromBase64(inputElement.value));
-        var dec8 = new Uint8Array(plaintext);
-        var decstr = "";
-        for (var i = 0; i < dec8.length; i++)
+        const dec8 = new Uint8Array(plaintext);
+        let decstr = "";
+        for (let i = 0; i < dec8.length; i++)
             decstr += String.fromCharCode(dec8[i]);
         outputElement.value = decstr;
     } catch (e) {
@@ -125,7 +125,7 @@ async function decryptMesage() {
     }
 }
 
-var allScreens = [
+const allScreens = [
     "screen-about",
     "screen-generate",
     "screen-encrypt",
@@ -133,8 +133,8 @@ var allScreens = [
 ];
 
 function showScreen(active) {
-    for (var name of allScreens) {
-        var element = document.getElementById(name);
+    for (let name of allScreens) {
+        const element = document.getElementById(name);
         if (element) {
             if (active === name) {
                 element.classList.remove("screen-inactive");
