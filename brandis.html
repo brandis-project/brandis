@@ -31,6 +31,21 @@ function stringToArrayBuffer(str) {
     return buf;
 }
 
+function joinBuffers(buffers) {
+    let totalInputLength = 0;
+    for (const inputBuf of buffers)
+        totalInputLength += inputBuf.byteLength;
+    const joinedBuffer = new ArrayBuffer(totalInputLength);
+    const joined8 = new Uint8Array(joinedBuffer);
+    let pos = 0;
+    for (const buffer of buffers) {
+        const input8 = new Uint8Array(buffer);
+        for (let i = 0; i < input8.length; i++)
+            joined8[pos++] = input8[i];
+    }
+    return joinedBuffer;
+}
+
 function handleError(e) {
     console.error(e);
     alert("" + e);
@@ -76,6 +91,7 @@ async function generateKeypair() {
 }
 
 const rsaOptions = { name: "RSA-OAEP", hash: { name: "SHA-256" }, };
+const CHUNK_SIZE = 190;
 
 async function encryptMesage() {
     const publicKeyElement = document.getElementById("encrypt-public-key");
@@ -90,11 +106,18 @@ async function encryptMesage() {
     }
 
     try {
+        const plaintextBuffer = stringToArrayBuffer(inputElement.value);
         const publicKey = await crypto.subtle.importKey("jwk", rawPublicKey,
             rsaOptions, false, ["encrypt"]);
-        const encrypted = await crypto.subtle.encrypt(rsaOptions,
-            publicKey, stringToArrayBuffer(inputElement.value));
-        outputElement.value = toBase64(encrypted);
+        const encryptedChunks = [];
+        for (let i = 0; i < plaintextBuffer.byteLength; i += CHUNK_SIZE) {
+            const partialSize = Math.min(CHUNK_SIZE, plaintextBuffer.byteLength - i);
+            encryptedChunks.push(await crypto.subtle.encrypt(rsaOptions,
+                publicKey, plaintextBuffer.slice(i, i + partialSize)));
+        }
+
+        const encryptedBuffer = joinBuffers(encryptedChunks);
+        outputElement.value = toBase64(encryptedBuffer);
     } catch (e) {
         handleError(e);
     }
@@ -115,8 +138,16 @@ async function decryptMesage() {
     try {
         const privateKey = await crypto.subtle.importKey("jwk", rawPrivateKey,
             rsaOptions, false, ["decrypt"]);
-        const plaintext = await crypto.subtle.decrypt(rsaOptions,
-            privateKey, fromBase64(inputElement.value));
+
+        const encryptedBuffer = fromBase64(inputElement.value);
+        const plaintextChunks = [];
+        for (let i = 0; i < encryptedBuffer.byteLength; i += 256) {
+            const encryptedChunk = encryptedBuffer.slice(i, i + 256);
+            plaintextChunks.push(await crypto.subtle.decrypt(rsaOptions,
+                privateKey, encryptedChunk));
+        }
+
+        const plaintext = joinBuffers(plaintextChunks);
         const dec8 = new Uint8Array(plaintext);
         let decstr = "";
         for (let i = 0; i < dec8.length; i++)
@@ -338,7 +369,6 @@ button {
                                 Encrypt
                             </button>
                         </div>
-                        <div style="text-align: center">Max: 190 characters</div>
                     </div>
                     <div class="col">
                         <div class="row-header">
@@ -351,7 +381,7 @@ button {
                         <textarea id="encrypt-public-key" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
                     </div>
                     <div class="col">
-                        <textarea id="encrypt-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" maxlength="190"></textarea>
+                        <textarea id="encrypt-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
                     </div>
                     <div class="col">
                         <textarea id="encrypt-output" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
