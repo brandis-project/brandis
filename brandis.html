@@ -75,6 +75,8 @@ async function generateKeypair() {
     }
 }
 
+const rsaOptions = { name: "RSA-OAEP", hash: { name: "SHA-256" }, };
+
 async function encryptMesage() {
     const publicKeyElement = document.getElementById("encrypt-public-key");
     const inputElement = document.getElementById("encrypt-input");
@@ -89,8 +91,8 @@ async function encryptMesage() {
 
     try {
         const publicKey = await crypto.subtle.importKey("jwk", rawPublicKey,
-            { name: "RSA-OAEP", hash: { name: "SHA-256" }, }, false, ["encrypt"]);
-        const encrypted = await crypto.subtle.encrypt({ name: "RSA-OAEP", hash: { name: "SHA-256" }, },
+            rsaOptions, false, ["encrypt"]);
+        const encrypted = await crypto.subtle.encrypt(rsaOptions,
             publicKey, stringToArrayBuffer(inputElement.value));
         outputElement.value = toBase64(encrypted);
     } catch (e) {
@@ -112,8 +114,8 @@ async function decryptMesage() {
 
     try {
         const privateKey = await crypto.subtle.importKey("jwk", rawPrivateKey,
-            { name: "RSA-OAEP", hash: { name: "SHA-256" }, }, false, ["decrypt"]);
-        const plaintext = await crypto.subtle.decrypt({ name: "RSA-OAEP", hash: { name: "SHA-256" }, },
+            rsaOptions, false, ["decrypt"]);
+        const plaintext = await crypto.subtle.decrypt(rsaOptions,
             privateKey, fromBase64(inputElement.value));
         const dec8 = new Uint8Array(plaintext);
         let decstr = "";
